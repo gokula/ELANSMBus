@@ -1,0 +1,24 @@
+<dict>
+	<key>Comment</key>
+	<string>Prevent Apple SMBus kexts from attaching to SMBUS controller, by AS</string>
+	<key>Find</key>
+	<data>SU9LaXQ=</data>
+	<key>InfoPlistPatch</key>
+	<true/>
+	<key>Name</key>
+	<string>com.apple.driver.AppleSMBusController</string>
+	<key>Replace</key>
+	<data>SU9LaXM=</data>
+</dict>
+<dict>
+	<key>Comment</key>
+	<string>Prevent Apple SMBus kexts from attaching to SMBUS controller, by AS</string>
+	<key>Find</key>
+	<data>SU9LaXQ=</data>
+	<key>InfoPlistPatch</key>
+	<true/>
+	<key>Name</key>
+	<string>com.apple.driver.AppleSMBusPCI</string>
+	<key>Replace</key>
+	<data>SU9LaXM=</data>
+</dict>

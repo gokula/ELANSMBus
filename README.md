@@ -13,7 +13,7 @@ https://patchwork.kernel.org/patch/10324629/
 - Rehabman `VoodooPS2Controller.kext` for the keyboard to work. 
 - Latest version of `ElanSMBus.kext` provided here. 
 - SMBUS hotpatch provided here `SSDT-SMBUS.dsl` and config.plist patches similar to CoolStar ones `SMBUS patches`. 
-- Disable the trackpad in Bios settings. (Trackpad support not implemented yet)
+- Disable the trackpoint in Bios settings. (Trackpoint support not implemented yet)
 
 ## Installation
 

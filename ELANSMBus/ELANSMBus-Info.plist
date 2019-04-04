@@ -11,7 +11,7 @@
 	<key>CFBundleIconFile</key>
 	<string></string>
 	<key>CFBundleIdentifier</key>
-	<string>com.gokula.ELANSMbus</string>
+	<string>com.gokula.ELANSMBus</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -440,7 +440,7 @@
 		<key>Native Multitouch Engine</key>
 		<dict>
 			<key>CFBundleIdentifier</key>
-			<string>com.gokula.ELANSMbus</string>
+			<string>com.gokula.ELANSMBus</string>
 			<key>IOClass</key>
 			<string>VoodooI2CNativeEngineAS</string>
 			<key>IOMatchCategory</key>

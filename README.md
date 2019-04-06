@@ -20,7 +20,7 @@ https://patchwork.kernel.org/patch/10324629/
 - The `VoodooPS2Mouse` plugin from `VoodooPS2Controller.kext` must be disabled or deleted (less elegant), so our touchpad do not use the PS2 interface to report the information and the initialization is done via SMBUS.
 - Add the SMBUS patches to the `config.plist` file to avoid the use of `AppleSMBusPCI` and `AppleSMBusController` kexts or remove them (again less elegant).
 - Add the SMBUS hotpatch `SMBUS.dsl`, it just creates a device representing the touchpad so the kext can be attached to it.
-- Remove `AppleIntelLpssiI2C.kext`and `AppleIntelLpssiI2C.kext` (If there is no "replacing" kext they get loaded and the driver does not work).
+- Remove `AppleIntelLpssiI2C.kext`and `AppleIntelLpssiI2CController.kext` (If there is no "replacing" kext they get loaded and the driver does not work).
 - Install the `ElanSMBus.kext` in /L/E
 - Update kext cache `sudo kextcache -i /`
 - Reboot and done.

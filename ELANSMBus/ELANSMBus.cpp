@@ -102,7 +102,7 @@ bool I2CDevice::init_device() {
        return false;
     }
  
-    UInt8 hw_res_x = 1;
+    UInt8 hw_res_x = 1.2;
     UInt8 hw_res_y = 1;
     UInt32 max_report_x = 3052;
     UInt32 max_report_y = 1888;
@@ -176,6 +176,7 @@ IOReturn I2CDevice::parse_ELAN_report() {
             continue;
         }
         bool contactValid = tp_info & (1U << (3 + i));
+    
         transducer->is_valid = contactValid;
         if (contactValid) {
             unsigned int posX = ((finger_data[0] & 0xf0) << 4) | finger_data[1];
@@ -226,7 +227,7 @@ IOReturn I2CDevice::parse_ELAN_report() {
     if (mt_interface) {
         mt_interface->handleInterruptReport(event, timestamp);
     }
-
+    
     return kIOReturnSuccess;
 }
 
@@ -312,7 +313,7 @@ bool I2CDevice::interruptFilter(OSObject *owner, IOFilterInterruptEventSource *s
 void I2CDevice::interruptHandler(OSObject *owner, IOInterruptEventSource *src, int count)
 {
     I2CDevice *obj = (I2CDevice *) owner;
-   UInt8 Bp; size_t len;
+    UInt8 Bp; size_t len;
 
     UInt8 iSt = obj->fPCIDevice->ioRead8(SMBSLVSTS(obj->fBase));
 

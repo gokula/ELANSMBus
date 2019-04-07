@@ -95,6 +95,7 @@ void VoodooI2CMT2SimulatorDeviceAS::constructReportGated(VoodooI2CMultitouchEven
     // finger data
     int first_unknownbit = -1;
     bool input_active = false;
+    bool is_error_input_active = false;
     
     for (int i = 0; i < multitouch_event.contact_count + 1; i++) {
         VoodooI2CDigitiserTransducerAS* transducer = OSDynamicCast(VoodooI2CDigitiserTransducerAS, multitouch_event.transducers->getObject(i));
@@ -123,6 +124,10 @@ void VoodooI2CMT2SimulatorDeviceAS::constructReportGated(VoodooI2CMultitouchEven
         
         IOFixed scaled_x = (((transducer->coordinates.x.value()) * 1.0f) / engine->interface->logical_max_x) * 7612;
         IOFixed scaled_y = (((transducer->coordinates.y.value()) * 1.0f) / engine->interface->logical_max_y) * 5065;
+        
+        if (scaled_x < 1 && scaled_y > 5064) {
+            is_error_input_active = true;
+        }
         
         IOFixed scaled_old_x = (((transducer->coordinates.x.last.value)* 1.0f) / engine->interface->logical_max_x) * 7612;
         
@@ -241,9 +246,12 @@ void VoodooI2CMT2SimulatorDeviceAS::constructReportGated(VoodooI2CMultitouchEven
     
     int total_report_len = (9 * multitouch_event.contact_count) + 12;
     IOBufferMemoryDescriptor* buffer_report = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, 0, total_report_len);
-    buffer_report->writeBytes(0, &input_report, total_report_len);
     
+    if (! is_error_input_active) {
+    buffer_report->writeBytes(0, &input_report, total_report_len);
     handleReport(buffer_report, kIOHIDReportTypeInput);
+    }
+    
     buffer_report->release();
     buffer_report = NULL;
 

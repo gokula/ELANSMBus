@@ -18,7 +18,7 @@ https://patchwork.kernel.org/patch/10324629/
 ## Installation
 
 - The `VoodooPS2Mouse` plugin from `VoodooPS2Controller.kext` must be disabled or deleted (less elegant), so our touchpad do not use the PS2 interface to report the information and the initialization is done via SMBUS.
-- Add the SMBUS patches to the `config.plist` file to avoid the use of `AppleSMBusPCI` and `AppleSMBusController` kexts or remove them (again less elegant).
+- Add the SMBUS patches to the `config.plist` file (in the KextsToPatch section) to avoid the use of `AppleSMBusPCI` and `AppleSMBusController` kexts or remove them (again less elegant).
 - Add the SMBUS hotpatch `SMBUS.dsl`, it just creates a device representing the touchpad so the kext can be attached to it.
 - Remove `AppleIntelLpssiI2C.kext`and `AppleIntelLpssiI2CController.kext` (If there is no "replacing" kext they get loaded and the driver does not work).
 - Install the `ElanSMBus.kext` in /L/E
@@ -31,7 +31,7 @@ https://patchwork.kernel.org/patch/10324629/
 - Currently it is needed to tap twice to get a single click. Need to check wether it is the configured pressure offset or any other paramenter.
 - Power management has not been implemented so there should be some issues. (I have not implemented it yet as I am waiting to receive the Broadcom wi-fi card to replace the Intel one)
 - The trackpoint information could be also retrieved, so I think it would be possible to use the Thinkpad trackpoint as well.
-- Find how to avoid the deletion of `AppleSMBusPCI` and `AppleSMBusControllerkexts` (more elegant).
+- Find how to avoid the deletion of `AppleIntelLpssiI2C.kext` and `AppleIntelLpssiI2CController.kext` (more elegant).
 - Test some changes to fix the no touch while booting. (Some delays added in the initialization could/should be removed)
 
 ## License

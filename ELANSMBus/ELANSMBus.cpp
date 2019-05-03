@@ -35,12 +35,16 @@ bool I2CDevice::init (OSDictionary* dict)
     read_in_progress = false;
     readingreport = false;
     
+    for (int i = 0; i < 34; i++) {
+        reportData_last[i] = 0;
+    }
+    
     return res;
 }
 
 void I2CDevice::free(void)
 {
-    IOLog("SMBUS_ELAN resources have been deallocated\n");
+    IOPrint("SMBUS_ELAN resources have been deallocated\n");
     
     if (Lock.holder) {
        IOLockFree(Lock.holder);
@@ -65,19 +69,19 @@ void I2CDevice::free(void)
 bool I2CDevice::publish_multitouch_interface() {
     mt_interface = new VoodooI2CMultitouchInterfaceAS();
     if (!mt_interface) {
-        IOLog("ELANSMBUS No memory to allocate VoodooI2CMultitouchInterface instance\n");
+        IOPrint("ELANSMBUS No memory to allocate VoodooI2CMultitouchInterface instance\n");
         goto multitouch_exit;
     }
     if (!mt_interface->init(NULL)) {
-        IOLog("ELANSMBUS Failed to init multitouch interface\n");
+        IOPrint("ELANSMBUS Failed to init multitouch interface\n");
         goto multitouch_exit;
     }
     if (!mt_interface->attach(this)) {
-        IOLog("ELANSMBUS Failed to attach multitouch interface\n");
+        IOPrint("ELANSMBUS Failed to attach multitouch interface\n");
         goto multitouch_exit;
     }
     if (!mt_interface->start(this)) {
-        IOLog("ELANSMBUS Failed to start multitouch interface\n");
+        IOPrint("ELANSMBUS Failed to start multitouch interface\n");
         goto multitouch_exit;
     }
     // Assume we are a touchpad
@@ -102,7 +106,7 @@ bool I2CDevice::init_device() {
        return false;
     }
  
-    UInt8 hw_res_x = 1.2;
+    UInt8 hw_res_x = 1;
     UInt8 hw_res_y = 1;
     UInt32 max_report_x = 3052;
     UInt32 max_report_y = 1888;
@@ -110,9 +114,9 @@ bool I2CDevice::init_device() {
    //ASM HARDCODE change for non T480s touchpads
     
    // retVal= elan_smbus_get_max(&max_report_x,&max_report_y);
-   // IOLog("xxxxxxxxx ----->  %d,%d, maxx maxy\n",max_report_x,max_report_y);
+   // IOPrint("xxxxxxxxx ----->  %d,%d, maxx maxy\n",max_report_x,max_report_y);
    // retVal=elan_smbus_get_resolution(&hw_res_x, &hw_res_y);
-   // IOLog("xxxxxxxxx ----->  %d,%d, resx, resy\n",hw_res_x,hw_res_y);
+   // IOPrint("xxxxxxxxx ----->  %d,%d, resx, resy\n",hw_res_x,hw_res_y);
     
     hw_res_x = (hw_res_x * 10 + 790) * 10 / 254;
     hw_res_y = (hw_res_y * 10 + 790) * 10 / 254;
@@ -129,9 +133,9 @@ void I2CDevice::handle_input_threaded() {
     if (!ready_for_input) {
         return;
     }
-    command_gate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &I2CDevice::parse_ELAN_report));
-    read_in_progress = false;
-    thread_terminate(current_thread());
+
+
+    command_gate->attemptAction(OSMemberFunctionCast(IOCommandGate::Action, this, &I2CDevice::parse_ELAN_report)); 
 
 }
 
@@ -143,22 +147,30 @@ IOReturn I2CDevice::parse_ELAN_report() {
     }
     
     if(int res=elan_smbus_get_report(reportData)!=0){
-     IOLog("Error reading the report\n");
         read_in_progress = false;
-        return kIOReturnError;
+            return kIOReturnError;
     }
+    if((reportData_last[3]==reportData[3])&&(reportData_last[4]==reportData[4])&&(reportData_last[5]==reportData[5])&&(reportData_last[6]==reportData[6])&&(reportData_last[7]==reportData[7])&&(reportData_last[8]==reportData[8])&&(reportData_last[9]==reportData[9])&&(reportData_last[10]==reportData[10])&&(reportData_last[11]==reportData[11&&(reportData_last[7]==reportData[7])]))
+        return kIOReturnSuccess;
+    else
+        for (int i = 0; i < ETP_MAX_REPORT_LEN; i++) {
+            reportData_last[i] = reportData[i];
+        }
+    
     if (!transducers) {
         read_in_progress = false;
         return kIOReturnBadArgument;
     }
+    
+    AbsoluteTime timestamp;
+    clock_get_uptime(&timestamp);
+    
     if (reportData[ETP_REPORT_ID_OFFSET] != ETP_REPORT_ID) {
-      IOLog("Invalid report (%d)\n",  reportData[ETP_REPORT_ID_OFFSET]);
         read_in_progress = false;
         return kIOReturnError;
     }
     
-    AbsoluteTime timestamp;
-    clock_get_uptime(&timestamp);
+    
     uint64_t timestamp_ns;
     absolutetime_to_nanoseconds(timestamp, &timestamp_ns);
     
@@ -210,6 +222,7 @@ IOReturn I2CDevice::parse_ELAN_report() {
             transducer->secondary_id = i;
             numFingers += 1;
             finger_data += ETP_FINGER_DATA_LEN;
+            
         } else {
             transducer->id = i;
             transducer->secondary_id = i;
@@ -227,7 +240,6 @@ IOReturn I2CDevice::parse_ELAN_report() {
     if (mt_interface) {
         mt_interface->handleInterruptReport(event, timestamp);
     }
-    
     return kIOReturnSuccess;
 }
 
@@ -236,7 +248,7 @@ bool I2CDevice::reset_device() {
     retVal = elan_smbus_reset();
     IOSleep(100);
     retVal= elan_smbus_set_mode(ETP_ENABLE_ABS);
-    IOLog("RESET result: %d",retVal);
+    IOPrint("RESET result: %d",retVal);
     return true;
 }
 
@@ -296,15 +308,7 @@ IOInterruptEventSource *I2CDevice::CreateDeviceInterrupt(IOInterruptEventSource:
 bool I2CDevice::interruptFilter(OSObject *owner, IOFilterInterruptEventSource *sender)
 {
     I2CDevice *obj = (I2CDevice *) owner;
-    //We need to read both the normal SMBUS status & the HOST_NOTIFY bit
-    UInt8 iSt = obj->fPCIDevice->ioRead8(SMBSLVSTS(obj->fBase));
-    obj->fSt = obj->fPCIDevice->ioRead8(SMBHSTSTS(obj->fBase));
-    
-    if((iSt & SMBSLVSTS_HST_NTFY_STS)&&((obj->fSt & SMBHSTSTS_HOST_BUSY)==0))
-    return true;
-    
-    if ((obj->fSt & SMBHSTSTS_HOST_BUSY) != 0 || (obj->fSt & (SMBHSTSTS_INTR | SMBHSTSTS_DEV_ERR | SMBHSTSTS_BUS_ERR | SMBHSTSTS_FAILED | SMBHSTSTS_SMBALERT_STS | SMBHSTSTS_BYTE_DONE)) == 0)
-        return false;
+    //we do not filter...
     
     return true;
 }
@@ -315,28 +319,22 @@ void I2CDevice::interruptHandler(OSObject *owner, IOInterruptEventSource *src, i
     I2CDevice *obj = (I2CDevice *) owner;
     UInt8 Bp; size_t len;
 
-    UInt8 iSt = obj->fPCIDevice->ioRead8(SMBSLVSTS(obj->fBase));
-
-    if(iSt & SMBSLVSTS_HST_NTFY_STS){
-        if (read_in_progress){
-            goto continueinterrupt;
-        }
-
-        read_in_progress = true;
-
+ 
+    if(((obj->fSt & SMBHSTSTS_INUSE_STS)==0)){
+ 
         thread_t new_thread;
         kern_return_t ret = kernel_thread_start(OSMemberFunctionCast(thread_continue_t, owner, &I2CDevice::handle_input_threaded), owner, &new_thread);
       
         if (ret != KERN_SUCCESS) {
             read_in_progress = false;
-            IOLog(" Thread error while attemping to get input report\n");
+            IOPrint(" Thread error while attemping to get input report\n");
         } else {
             thread_deallocate(new_thread);
         }
     }
     
 continueinterrupt:
-   
+    
     /* Catch <DEVERR,INUSE> when cold start */
     if (obj->I2C_Transfer.op == I2CNoOp)
         return;
@@ -421,15 +419,14 @@ bool I2CDevice::start(IOService *provider)
      * by immediate enabling of the event source */
     command_gate = IOCommandGate::commandGate(this);
     if (!command_gate || (MyWorkLoop->addEventSource(command_gate) != kIOReturnSuccess)) {
-        IOLog("Could not open command gate\n");
+        IOPrint("Could not open command gate\n");
         release_resources();
         return false;
     }
     
- 
-    publish_multitouch_interface();
+   publish_multitouch_interface();
     if (!init_device()) {
-        IOLog("%s Failed to init device\n", getName());
+        IOPrint("%s Failed to init device\n", getName());
         return NULL;
     }
    
@@ -447,9 +444,9 @@ bool I2CDevice::start(IOService *provider)
     ready_for_input = true;
     
     setProperty("VoodooI2CServices Supported", OSBoolean::withBoolean(true));
-    IOLog("%s VoodooI2CELAN has started\n", getName());
+    IOPrint("%s VoodooI2CELAN has started\n", getName());
 
-        mt_interface->registerService();
+   mt_interface->registerService();
     
     IOSleep(50); //Should be removed probably - TEST
     /* Allow matching of drivers which use our class as a provider class */
@@ -565,22 +562,22 @@ int I2CDevice::i801_check_pre(void)
     status &= STATUS_FLAGS;
     
     if (status) {
-        IOLog("Clearing status flags (%02x)\n",status);
+        IOPrint("Clearing status flags (%02x)\n",status);
         fPCIDevice->ioWrite8(SMBHSTSTS(fBase),status);
         status = fPCIDevice->ioRead8(SMBHSTSTS(fBase)) & STATUS_FLAGS;
         if (status) {
-            IOLog("Failed clearing status flags (%02x)\n",status);
+            IOPrint("Failed clearing status flags (%02x)\n",status);
             return -EBUSY;
         }
     }
     
     status = fPCIDevice->ioRead8(SMBHSTSTS(fBase))  & SMBAUXSTS_CRCE;
     if (status) {
-        IOLog("Clearing aux status flags (%02x)\n", status);
+        IOPrint("Clearing aux status flags (%02x)\n", status);
         fPCIDevice->ioWrite8(SMBAUXSTS(fBase),status);
         status = fPCIDevice->ioRead8(SMBHSTSTS(fBase))  & SMBAUXSTS_CRCE;
             if (status) {
-                IOLog("Failed clearing aux status flags (%02x)\n",status);
+                IOPrint("Failed clearing aux status flags (%02x)\n",status);
                 return -EBUSY;
             }
     }
@@ -595,9 +592,9 @@ int I2CDevice::i801_check_post(int stat)
      * If the SMBus is still busy, we give up
      */
     if ((status < 0)) {
-       IOLog("Transaction timeout\n");
+       IOPrint("Transaction timeout\n");
         /* try to stop the current command */
-        IOLog("Terminating the current operation\n");
+        IOPrint("Terminating the current operation\n");
         fPCIDevice->ioWrite8(SMBHSTCNT(fBase),fPCIDevice->ioRead8(SMBHSTCNT(fBase)) | SMBHSTCNT_KILL);
         IODelay(10);
         fPCIDevice->ioWrite8(SMBHSTCNT(fBase),fPCIDevice->ioRead8(SMBHSTCNT(fBase)) & (~SMBHSTCNT_KILL) );
@@ -610,21 +607,21 @@ int I2CDevice::i801_check_post(int stat)
     
     if (status & SMBHSTSTS_FAILED) {
         result = -EIO;
-        IOLog("Transaction failed\n");
+        IOPrint("Transaction failed\n");
     }
     
     if (status & SMBHSTSTS_DEV_ERR) {
           if(fPCIDevice->ioRead8(SMBAUXSTS(fBase))  & SMBAUXSTS_CRCE) {
               fPCIDevice->ioWrite8(SMBAUXSTS(fBase),SMBAUXSTS_CRCE);
               result = -EBADMSG;
-              IOLog("PEC error\n");
+              IOPrint("PEC error\n");
         } else {
-                IOLog("SMB Check post No response\n");
+                IOPrint("SMB Check post No response\n");
                 result = -ENXIO;
         }
     }
     if (status & SMBHSTSTS_BUS_ERR) {
-            IOLog("SMB Check post lost arbitration\n");
+            IOPrint("SMB Check post lost arbitration\n");
         result = -EAGAIN;
     }
     /* Clear status flags except BYTE_DONE, to be cleared by caller */
@@ -708,7 +705,7 @@ SInt32 I2CDevice::__i2c_smbus_xfer( UInt16 addr,
                           protocol, data);
         if (res != -EAGAIN)
             break;
-        IOSleep(10);
+        IOSleep(20);
     }
     return res;
 }
@@ -840,6 +837,7 @@ int I2CDevice::i801_transaction( UInt8 xact)
     }
     /* Don't block forever */
     ret = IOLockSleepDeadline(Lock.holder, &Lock.event, deadline, THREAD_INTERRUPTIBLE);
+    
     Lock.event = false;
     IOLockUnlock(Lock.holder);
     if (ret != THREAD_AWAKENED)

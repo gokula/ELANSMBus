@@ -31,6 +31,7 @@ public:
     IOPCIDevice *fPCIDevice;
     UInt32 fBase;
     UInt8 fSt;
+    UInt8 iSt;
     struct {
         IOLock *holder;
         bool event;
@@ -62,6 +63,7 @@ public:
     char elan_name[5];
     int pressure_adjustment;
     int product_id;
+    UInt8 reportData_last[34];
     IOCommandGate* command_gate;
     VoodooI2CMultitouchInterfaceAS *mt_interface;
     OSArray* transducers;
@@ -131,6 +133,8 @@ static    bool interruptFilter(OSObject *owner, IOFilterInterruptEventSource *se
     void handle_input_threaded();
     bool init_device();
     IOReturn parse_ELAN_report();
+    IOReturn parse_ELAN_report2();
+
     bool publish_multitouch_interface();
     void release_resources();
     bool reset_device();

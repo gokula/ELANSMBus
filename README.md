@@ -28,7 +28,6 @@ https://patchwork.kernel.org/patch/10324629/
 
 ## To Do
 
-- Currently it is needed to tap twice to get a single click. Need to check wether it is the configured pressure offset or any other paramenter.
 - Power management has not been implemented so there should be some issues. (I have not implemented it yet as I am waiting to receive the Broadcom wi-fi card to replace the Intel one)
 - The trackpoint information could be also retrieved, so I think it would be possible to use the Thinkpad trackpoint as well.
 - Find how to avoid the deletion of `AppleIntelLpssiI2C.kext` and `AppleIntelLpssiI2CController.kext` (more elegant).

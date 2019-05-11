@@ -28,7 +28,7 @@ https://patchwork.kernel.org/patch/10324629/
 
 ## To Do
 
-- Power management has not been implemented so there should be some issues. (I have not implemented it yet as I am waiting to receive the Broadcom wi-fi card to replace the Intel one)
+- Power management has not been implemented so the touchpad does not work after Sleep. 
 - The trackpoint information could be also retrieved, so I think it would be possible to use the Thinkpad trackpoint as well.
 - Find how to avoid the deletion of `AppleIntelLpssiI2C.kext` and `AppleIntelLpssiI2CController.kext` (more elegant).
 - Test some changes to fix the no touch while booting. (Some delays added in the initialization could/should be removed)

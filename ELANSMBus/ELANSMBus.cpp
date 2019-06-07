@@ -309,6 +309,12 @@ bool I2CDevice::interruptFilter(OSObject *owner, IOFilterInterruptEventSource *s
 {
     I2CDevice *obj = (I2CDevice *) owner;
     //we do not filter...
+    //We need to read both the normal SMBUS status & the HOST_NOTIFY bit
+    obj->iSt = obj->fPCIDevice->ioRead8(SMBSLVSTS(obj->fBase));
+    obj->fSt = obj->fPCIDevice->ioRead8(SMBHSTSTS(obj->fBase));
+    
+    if((obj->iSt & SMBSLVSTS_HST_NTFY_STS)&&((obj->fSt & SMBHSTSTS_HOST_BUSY)==0))
+        return true;
     
     return true;
 }

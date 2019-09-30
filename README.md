@@ -1,5 +1,8 @@
 # ELANSMBus
 
+This repo is no longer maintained. Refer to https://github.com/leo-labs/VoodooSMBus for an improved version.
+
+
 The objective of this project is to provide support to the ELAN Touchpads which use SMBUS to report the touch information. It has been created to work on the Thinkpad T480s.
 
 *"New ICs are using a different scheme for the alternate bus parameter.
